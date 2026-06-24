@@ -115,55 +115,12 @@ public class LootBag {
 
    @JsonIgnore
    public String getTexture() {
-      if (this.texture != null && !this.texture.isEmpty()) {
-         return this.texture;
-      }
-
-      return this.readTextureFromItem();
-   }
-
-   @JsonIgnore
-   private String readTextureFromItem() {
-      ItemStack item = this.getItemStack();
-      if (item == null || item.getType() != Material.SKULL_ITEM) {
-         return null;
-      }
-
-      try {
-         NBTItem nbt = new NBTItem(item);
-         if (!nbt.hasKey("SkullOwner")) {
-            return null;
-         }
-
-         NBTCompound skullOwner = nbt.getCompound("SkullOwner");
-         if (skullOwner == null || !skullOwner.hasKey("Properties")) {
-            return null;
-         }
-
-         NBTCompound properties = skullOwner.getCompound("Properties");
-         if (properties == null || !properties.hasKey("textures")) {
-            return null;
-         }
-
-         NBTCompoundList textures = properties.getCompoundList("textures");
-         for (Object entry : textures) {
-            if (entry instanceof NBTCompound) {
-               String value = ((NBTCompound)entry).getString("Value");
-               if (value != null && !value.isEmpty()) {
-                  return value;
-               }
-            }
-         }
-
-         return null;
-      } catch (Exception ignored) {
-         return null;
-      }
+      return this.texture;
    }
 
    @JsonIgnore
    public boolean hasTexture() {
-      return this.getTexture() != null;
+      return this.texture != null && !this.texture.isEmpty();
    }
 
    @JsonIgnore
@@ -173,72 +130,46 @@ public class LootBag {
          return;
       }
 
-      String trimmed = base64.trim();
-      this.texture = trimmed;
-      this.applyTextureToItem(trimmed);
-   }
-
-   @JsonIgnore
-   private void applyTextureToItem(String base64) {
-      String currentName = this.getDisplayName();
-      List<String> currentLore = this.getLore();
-
-      ItemStack head = new ItemStack(Material.SKULL_ITEM, 1, (short) 3);
-      ItemMeta meta = head.getItemMeta();
-      if (meta != null) {
-         meta.setDisplayName(StringUtil.color(currentName));
-         if (currentLore != null && !currentLore.isEmpty()) {
-            meta.setLore(currentLore);
-         }
-
-         head.setItemMeta(meta);
-      }
-
-      NBTItem nbt = new NBTItem(head);
-      NBTCompound skullOwner = nbt.addCompound("SkullOwner");
-      skullOwner.setString("Id", UUID.randomUUID().toString());
-      skullOwner.setString("Name", this.internalName == null ? "lootbag" : this.internalName);
-      NBTCompound properties = skullOwner.addCompound("Properties");
-      NBTCompoundList texturesList = properties.getCompoundList("textures");
-      NBTListCompound textureEntry = texturesList.addCompound();
-      textureEntry.setString("Value", base64);
-      head = nbt.getItem();
-
-      this.item = new SerializedItemStack(head).get();
+      this.texture = base64.trim();
    }
 
    @JsonIgnore
    public void removeTexture() {
       this.texture = null;
-      ItemStack item = this.getItemStack();
-      if (item == null) {
-         return;
-      }
-
-      try {
-         NBTItem nbt = new NBTItem(item);
-         if (nbt.hasKey("SkullOwner")) {
-            nbt.removeKey("SkullOwner");
-            item = nbt.getItem();
-         }
-      } catch (Exception ignored) {
-      }
-
-      if (item.getType() == Material.SKULL_ITEM) {
-         item.setType(Material.CHEST);
-      }
-
-      this.item = new SerializedItemStack(item).get();
    }
 
    @JsonIgnore
-   public void ensureTextureSynced() {
-      if (this.texture != null && !this.texture.isEmpty()) {
-         String itemTexture = this.readTextureFromItem();
-         if (!this.texture.equals(itemTexture)) {
-            this.applyTextureToItem(this.texture);
+   private ItemStack applyTextureToItem(ItemStack base) {
+      ItemMeta baseMeta = base.getItemMeta();
+      String name = this.displayName != null && !this.displayName.isEmpty()
+         ? StringUtil.color(this.displayName)
+         : (baseMeta != null && baseMeta.hasDisplayName() ? baseMeta.getDisplayName() : this.getFallbackDisplayName());
+      List<String> lore = baseMeta != null && baseMeta.hasLore() ? baseMeta.getLore() : Lists.newArrayList();
+
+      ItemStack head = new ItemStack(Material.SKULL_ITEM, 1, (short) 3);
+      ItemMeta meta = head.getItemMeta();
+      if (meta != null) {
+         meta.setDisplayName(name);
+         if (!lore.isEmpty()) {
+            meta.setLore(lore);
          }
+         head.setItemMeta(meta);
       }
+
+      try {
+         NBTItem nbt = new NBTItem(head);
+         NBTCompound skullOwner = nbt.addCompound("SkullOwner");
+         skullOwner.setString("Id", UUID.randomUUID().toString());
+         skullOwner.setString("Name", this.internalName == null ? "lootbag" : this.internalName);
+         NBTCompound properties = skullOwner.addCompound("Properties");
+         NBTCompoundList texturesList = properties.getCompoundList("textures");
+         NBTListCompound textureEntry = texturesList.addCompound();
+         textureEntry.setString("Value", this.texture);
+         head = nbt.getItem();
+      } catch (Exception ignored) {
+      }
+
+      return head;
    }
 
    @JsonIgnore
@@ -258,7 +189,7 @@ public class LootBag {
    }
 
    @JsonIgnore
-   public ItemStack getItemStack() {
+   private ItemStack getRawItemStack() {
       ItemStack itemStack = null;
       if (this.item != null && !this.item.isEmpty()) {
          try {
@@ -270,6 +201,17 @@ public class LootBag {
       if (itemStack == null || itemStack.getType() == Material.AIR) {
          itemStack = this.createFallbackItemStack();
          this.item = new SerializedItemStack(itemStack).get();
+      }
+
+      return itemStack;
+   }
+
+   @JsonIgnore
+   public ItemStack getItemStack() {
+      ItemStack itemStack = this.getRawItemStack();
+
+      if (this.texture != null && !this.texture.isEmpty()) {
+         itemStack = this.applyTextureToItem(itemStack);
       }
 
       return itemStack;

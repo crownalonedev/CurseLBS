@@ -351,6 +351,7 @@ public class LootBagCreationMenu implements Listener {
    }
 
    private void refreshMenu(Player player) {
+      LootBagManager.getInstance().saveToDisk();
       LootBagCreationMenu menu = new LootBagCreationMenu(this.lootBag);
       menu.show(player);
       this.sound(player);
@@ -499,11 +500,9 @@ public class LootBagCreationMenu implements Listener {
                   }
 
                   if (message.equalsIgnoreCase("null")) {
-                     this.editType.remove(player.getUniqueId());
-                     player.sendMessage(LootBagPlugin.prefix("You have reset the lootbags lore."));
                      this.lootBag.setLore(Lists.newArrayList());
-                     this.menu.show(player);
-                     this.sound(player);
+                     this.onFinish(player);
+                     player.sendMessage(LootBagPlugin.prefix("You have reset the lootbags lore."));
                      return;
                   }
 

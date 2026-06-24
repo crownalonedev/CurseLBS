@@ -8,12 +8,17 @@ import com.fasterxml.jackson.databind.introspect.VisibilityChecker;
 import com.google.common.collect.Lists;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.minecurse.lootbags.LootBagPlugin;
 import org.minecurse.lootbags.struct.LootBag;
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.Yaml;
 
 public class LootBagManager {
    private final JavaPlugin plugin;
@@ -35,6 +40,10 @@ public class LootBagManager {
 
    public void addLootBag(LootBag LootBag2) {
       this.LootBags.add(LootBag2);
+      if (this.originalDump == null) {
+         this.originalDump = Lists.newArrayList();
+      }
+
       this.originalDump.add(LootBag2);
    }
 
@@ -86,10 +95,13 @@ public class LootBagManager {
    public void removeLootBag(LootBag bag) {
       if (bag != null) {
          this.LootBags.remove(bag);
-         File file = new File(this.getPath() + "/lootbags/" + bag.getInternalName());
-         if (file.exists()) {
-            file.delete();
+         if (this.originalDump != null) {
+            this.originalDump.remove(bag);
          }
+
+         new File(this.getPath() + "/lootbags/" + bag.getInternalName() + ".yml").delete();
+         new File(this.getPath() + "/lootbags/" + bag.getInternalName() + ".yaml").delete();
+         new File(this.getPath() + "/lootbags/" + bag.getInternalName() + ".json").delete();
       }
    }
 
@@ -102,60 +114,112 @@ public class LootBagManager {
    }
 
    public void loadFromDisk() {
-      File file = new File(this.getPath() + "/lootbags");
+      File dir = new File(this.getPath() + "/lootbags");
       this.LootBags = Lists.newArrayList();
-      if (file.exists()) {
-         ObjectMapper mapper = new ObjectMapper();
-         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-         mapper.setVisibility(VisibilityChecker.Std.defaultInstance().withFieldVisibility(JsonAutoDetect.Visibility.ANY));
+      if (dir.exists()) {
+         ObjectMapper jsonMapper = new ObjectMapper();
+         jsonMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+         jsonMapper.setVisibility(VisibilityChecker.Std.defaultInstance().withFieldVisibility(JsonAutoDetect.Visibility.ANY));
 
-         for (File f : Objects.requireNonNull(file.listFiles())) {
-            try {
-               LootBag loaded = mapper.readValue(f, LootBag.class);
-               if (loaded != null) {
-                  loaded.ensureTextureSynced();
-                  this.LootBags.add(loaded);
+         this.convertOldJsonFiles(dir, jsonMapper);
+
+         for (File f : Objects.requireNonNull(dir.listFiles())) {
+            String name = f.getName().toLowerCase();
+            if (name.endsWith(".yml") || name.endsWith(".yaml")) {
+               try {
+                  LootBag loaded = this.readYaml(f, jsonMapper);
+                  if (loaded != null) {
+                     this.LootBags.add(loaded);
+                  }
+               } catch (Exception var9) {
+                  this.plugin.getLogger().warning("Failed to load lootbag from " + f.getName() + ": " + var9.getMessage());
                }
-            } catch (Exception var8) {
             }
          }
 
          this.LootBags.sort(Comparator.comparing(LootBag::getInternalName));
          this.originalDump = Lists.newArrayList(this.LootBags);
+      } else {
+         this.originalDump = Lists.newArrayList();
+      }
+   }
+
+   private void convertOldJsonFiles(File dir, ObjectMapper jsonMapper) {
+      for (File f : Objects.requireNonNull(dir.listFiles())) {
+         if (f.getName().toLowerCase().endsWith(".json")) {
+            String ymlName = f.getName().substring(0, f.getName().length() - 5) + ".yml";
+            File ymlFile = new File(dir, ymlName);
+            if (!ymlFile.exists()) {
+               try {
+                  LootBag bag = jsonMapper.readValue(f, LootBag.class);
+                  if (bag != null) {
+                     this.writeYaml(ymlFile, bag, jsonMapper);
+                     this.plugin.getLogger().info("Converted " + f.getName() + " to " + ymlName);
+                  }
+               } catch (Exception var8) {
+                  this.plugin.getLogger().warning("Failed to convert " + f.getName() + " to YAML: " + var8.getMessage());
+               }
+            }
+
+            f.delete();
+         }
       }
    }
 
    public void saveToDisk() {
-      File file = new File(this.path + "/lootbags");
-      file.mkdir();
-      ObjectMapper mapper = new ObjectMapper();
-      mapper.enable(SerializationFeature.INDENT_OUTPUT);
-      mapper.setVisibility(VisibilityChecker.Std.defaultInstance().withFieldVisibility(JsonAutoDetect.Visibility.ANY));
+      File dir = new File(this.path + "/lootbags");
+      dir.mkdir();
+      ObjectMapper jsonMapper = new ObjectMapper();
+      jsonMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+      jsonMapper.setVisibility(VisibilityChecker.Std.defaultInstance().withFieldVisibility(JsonAutoDetect.Visibility.ANY));
+
+      if (this.originalDump == null) {
+         this.originalDump = Lists.newArrayList(this.LootBags);
+      }
 
       for (LootBag LootBag2 : this.originalDump) {
          if (!this.LootBags.contains(LootBag2)) {
+            new File(this.path + "/lootbags/" + LootBag2.getInternalName() + ".yml").delete();
             new File(this.path + "/lootbags/" + LootBag2.getInternalName() + ".json").delete();
          } else {
-            file = new File(this.path + "/lootbags/" + LootBag2.getInternalName() + ".json");
-            if (file.exists()) {
-               file.delete();
-            }
+            File ymlFile = new File(this.path + "/lootbags/" + LootBag2.getInternalName() + ".yml");
 
             try {
-               file.createNewFile();
-            } catch (IOException var7) {
-               throw new RuntimeException(var7);
-            }
-
-            try {
-               mapper.writeValue(file, LootBag2);
-            } catch (IOException var6) {
-               throw new RuntimeException(var6);
+               this.writeYaml(ymlFile, LootBag2, jsonMapper);
+            } catch (Exception var6) {
+               this.plugin.getLogger().warning("Failed to save lootbag " + LootBag2.getInternalName() + ": " + var6.getMessage());
             }
          }
       }
 
       this.originalDump = Lists.newArrayList(this.LootBags);
+   }
+
+   @SuppressWarnings("unchecked")
+   private void writeYaml(File file, LootBag bag, ObjectMapper jsonMapper) throws IOException {
+      Map<String, Object> data = jsonMapper.convertValue(bag, Map.class);
+      DumperOptions options = new DumperOptions();
+      options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+      options.setPrettyFlow(true);
+      options.setIndent(2);
+      Yaml yaml = new Yaml(options);
+      String yamlStr = yaml.dump(data);
+      if (file.exists()) {
+         file.delete();
+      }
+
+      Files.write(file.toPath(), yamlStr.getBytes(StandardCharsets.UTF_8));
+   }
+
+   private LootBag readYaml(File file, ObjectMapper jsonMapper) throws IOException {
+      String yamlStr = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
+      Yaml yaml = new Yaml();
+      Map<String, Object> data = yaml.load(yamlStr);
+      if (data == null) {
+         return null;
+      } else {
+         return jsonMapper.convertValue(data, LootBag.class);
+      }
    }
 
    public JavaPlugin getPlugin() {

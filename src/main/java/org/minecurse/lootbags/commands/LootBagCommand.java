@@ -29,6 +29,7 @@ import org.minecurse.lootbags.struct.CrateAnimation;
 import org.minecurse.lootbags.struct.CrateType;
 import org.minecurse.lootbags.struct.HalfType;
 import org.minecurse.lootbags.struct.LootBag;
+import org.minecurse.lootbags.settings.Settings;
 import org.minecurse.lootmanager.struct.Reward;
 import org.minecurse.lootmanager.utils.RewardUtils;
 
@@ -49,6 +50,7 @@ public class LootBagCommand extends BaseCommand {
             sender.sendMessage(LootBagPlugin.prefix("&cUsage: /el list"));
             sender.sendMessage(LootBagPlugin.prefix("&cUsage: /el gui"));
             sender.sendMessage(LootBagPlugin.prefix("&cUsage: /el save"));
+            sender.sendMessage(LootBagPlugin.prefix("&cUsage: /el reload"));
          } else {
             LootBagDisplayMenu.getInventory().open((Player)sender);
          }
@@ -110,6 +112,7 @@ public class LootBagCommand extends BaseCommand {
 
       bag.setDisplayName(displayName);
       bag.setDisplay(displayName);
+      LootBagManager.getInstance().saveToDisk();
       sender.sendMessage(LootBagPlugin.prefix("The display name of {0} &7is now {1}&7.", bag.getInternalName(), bag.getDisplayName()));
       if (sender instanceof Player) {
          PlayerUtils.playSound((Player)sender, Sound.LEVEL_UP, 0.75F);
@@ -127,10 +130,12 @@ public class LootBagCommand extends BaseCommand {
 
       if (base64.trim().equalsIgnoreCase("remove") || base64.trim().equalsIgnoreCase("clear") || base64.trim().equalsIgnoreCase("null")) {
          bag.removeTexture();
+         LootBagManager.getInstance().saveToDisk();
          sender.sendMessage(LootBagPlugin.prefix("The base64 texture has been removed from {0}.", bag.getInternalName()));
       } else {
          try {
             bag.setTexture(base64);
+            LootBagManager.getInstance().saveToDisk();
             sender.sendMessage(LootBagPlugin.prefix("The base64 texture has been applied to {0}.", bag.getInternalName()));
          } catch (Exception var5) {
             sender.sendMessage(LootBagPlugin.prefix("&cThat does not appear to be a valid base64 texture value."));
@@ -151,11 +156,22 @@ public class LootBagCommand extends BaseCommand {
    }
 
    @CommandPermission("curse.admin")
+   @Subcommand("reload")
+   public void onReload(CommandSender sender) {
+      LootBagPlugin plugin = LootBagPlugin.getInstance();
+      plugin.reloadConfig();
+      Settings.load(plugin.getConfig());
+      LootBagManager.getInstance().loadFromDisk();
+      sender.sendMessage(LootBagPlugin.prefix("Configuration and all lootbags have been reloaded from disk."));
+   }
+
+   @CommandPermission("curse.admin")
    @Subcommand("delete")
    @CommandCompletion("@lootBags")
    public void onDelete(CommandSender sender, LootBag bag) {
       sender.sendMessage(LootBagPlugin.prefix("The lootbag {0} &7has been deleted.", bag.getInternalName()));
       LootBagManager.getInstance().removeLootBag(bag);
+      LootBagManager.getInstance().saveToDisk();
    }
 
    @CommandPermission("curse.admin")
@@ -167,6 +183,7 @@ public class LootBagCommand extends BaseCommand {
       } else {
          LootBag lootBag = new LootBag(arg);
          manager.addLootBag(lootBag);
+         manager.saveToDisk();
          player.sendMessage(LootBagPlugin.prefix("You are now creating the {0} lootbag.", lootBag.getInternalName()));
          PlayerUtils.playSound(player, Sound.LEVEL_UP, 0.75F);
          new LootBagCreationMenu(lootBag).show(player);
