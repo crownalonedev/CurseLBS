@@ -82,7 +82,6 @@ public class LootBagPlugin extends JavaPlugin {
       this.manager.initialize();
       this.manager.loadFromDisk();
       new LootBagSaleTask().runTaskTimer(this, 500L, 8400L);
-      this.getServer().getScheduler().runTaskTimerAsynchronously(this, () -> this.manager.processSave(), 100L, 100L);
    }
 
    private void registerCommands() {
@@ -112,7 +111,7 @@ public class LootBagPlugin extends JavaPlugin {
    }
 
    public void onDisable() {
-      this.manager.forceSaveToDisk();
+      this.manager.saveToDisk();
       this.animationManager.getAnimationHashMap().values().forEach(CrateAnimation::killAnimation);
    }
 }

@@ -135,67 +135,38 @@ public class LootBagManager {
       }
    }
 
-   private volatile boolean dirty = false;
-   private final Object saveLock = new Object();
-
    public void saveToDisk() {
-      this.dirty = true;
-   }
+      File dir = new File(this.path + "/lootbags");
+      dir.mkdir();
+      ObjectMapper mapper = new ObjectMapper();
+      mapper.enable(SerializationFeature.INDENT_OUTPUT);
+      mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+      mapper.setVisibility(VisibilityChecker.Std.defaultInstance().withFieldVisibility(JsonAutoDetect.Visibility.ANY));
 
-   public void forceSaveToDisk() {
-      this.dirty = true;
-      this.processSave();
-   }
-
-   public void processSave() {
-      if (!this.dirty) {
-         return;
-      }
-
-      synchronized (this.saveLock) {
-         this.dirty = false;
-         File dir = new File(this.path + "/lootbags");
-         dir.mkdir();
-         ObjectMapper mapper = new ObjectMapper();
-         mapper.enable(SerializationFeature.INDENT_OUTPUT);
-         mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
-         mapper.setVisibility(VisibilityChecker.Std.defaultInstance().withFieldVisibility(JsonAutoDetect.Visibility.ANY));
-
-         if (this.originalDump == null) {
-            this.originalDump = Lists.newArrayList(this.LootBags);
-         }
-
-         for (LootBag LootBag2 : this.originalDump) {
-            if (!this.LootBags.contains(LootBag2)) {
-               new File(this.path + "/lootbags/" + LootBag2.getInternalName() + ".json").delete();
-            } else {
-               File jsonFile = new File(this.path + "/lootbags/" + LootBag2.getInternalName() + ".json");
-               this.writeWithRetry(jsonFile, LootBag2, mapper);
-            }
-         }
-
+      if (this.originalDump == null) {
          this.originalDump = Lists.newArrayList(this.LootBags);
       }
-   }
 
-   private void writeWithRetry(File jsonFile, LootBag bag, ObjectMapper mapper) {
-      for (int attempt = 1; attempt <= 3; attempt++) {
-         try {
-            mapper.writeValue(jsonFile, bag);
-            return;
-         } catch (Exception var8) {
-            if (attempt == 3) {
-               this.plugin.getLogger().warning("Failed to save lootbag " + bag.getInternalName() + " after 3 attempts: " + var8.toString());
-            } else {
-               try {
-                  Thread.sleep(50L * attempt);
-               } catch (InterruptedException ignored) {
-                  Thread.currentThread().interrupt();
-                  return;
+      for (LootBag LootBag2 : this.originalDump) {
+         if (!this.LootBags.contains(LootBag2)) {
+            new File(this.path + "/lootbags/" + LootBag2.getInternalName() + ".json").delete();
+         } else {
+            File jsonFile = new File(this.path + "/lootbags/" + LootBag2.getInternalName() + ".json");
+
+            try {
+               if (jsonFile.exists()) {
+                  jsonFile.delete();
                }
+
+               jsonFile.createNewFile();
+               mapper.writeValue(jsonFile, LootBag2);
+            } catch (Exception var6) {
+               this.plugin.getLogger().warning("Failed to save lootbag " + LootBag2.getInternalName() + ": " + var6.toString());
             }
          }
       }
+
+      this.originalDump = Lists.newArrayList(this.LootBags);
    }
 
    public JavaPlugin getPlugin() {
