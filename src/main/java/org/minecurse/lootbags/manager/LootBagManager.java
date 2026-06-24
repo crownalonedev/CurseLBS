@@ -170,35 +170,31 @@ public class LootBagManager {
                new File(this.path + "/lootbags/" + LootBag2.getInternalName() + ".json").delete();
             } else {
                File jsonFile = new File(this.path + "/lootbags/" + LootBag2.getInternalName() + ".json");
-               File tmpFile = new File(this.path + "/lootbags/" + LootBag2.getInternalName() + ".json.tmp");
-
-               try {
-                  mapper.writeValue(tmpFile, LootBag2);
-                  try {
-                     java.nio.file.Files.move(
-                        tmpFile.toPath(),
-                        jsonFile.toPath(),
-                        java.nio.file.StandardCopyOption.REPLACE_EXISTING,
-                        java.nio.file.StandardCopyOption.ATOMIC_MOVE
-                     );
-                  } catch (Exception var9) {
-                     try {
-                        jsonFile.delete();
-                     } catch (Exception ignored) {
-                     }
-
-                     tmpFile.renameTo(jsonFile);
-                  }
-               } catch (Exception var10) {
-                  this.plugin.getLogger().warning("Failed to save lootbag " + LootBag2.getInternalName() + ": " + var10.toString());
-                  if (tmpFile.exists()) {
-                     tmpFile.delete();
-                  }
-               }
+               this.writeWithRetry(jsonFile, LootBag2, mapper);
             }
          }
 
          this.originalDump = Lists.newArrayList(this.LootBags);
+      }
+   }
+
+   private void writeWithRetry(File jsonFile, LootBag bag, ObjectMapper mapper) {
+      for (int attempt = 1; attempt <= 3; attempt++) {
+         try {
+            mapper.writeValue(jsonFile, bag);
+            return;
+         } catch (Exception var8) {
+            if (attempt == 3) {
+               this.plugin.getLogger().warning("Failed to save lootbag " + bag.getInternalName() + " after 3 attempts: " + var8.toString());
+            } else {
+               try {
+                  Thread.sleep(50L * attempt);
+               } catch (InterruptedException ignored) {
+                  Thread.currentThread().interrupt();
+                  return;
+               }
+            }
+         }
       }
    }
 
