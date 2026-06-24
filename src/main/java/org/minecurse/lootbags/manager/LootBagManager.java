@@ -162,13 +162,23 @@ public class LootBagManager {
                   if (bag != null) {
                      this.writeYaml(ymlFile, bag, jsonMapper);
                      this.plugin.getLogger().info("Converted " + f.getName() + " to " + ymlName);
+                     f.delete();
+                  } else {
+                     this.plugin.getLogger().warning("Skipped empty JSON: " + f.getName());
                   }
                } catch (Exception var8) {
-                  this.plugin.getLogger().warning("Failed to convert " + f.getName() + " to YAML: " + var8.getMessage());
+                  this.plugin.getLogger().warning("Failed to convert " + f.getName() + " to YAML: " + var8.toString());
+                  this.plugin.getLogger().warning("Original JSON kept. Attempting direct rename to .yml so it can be repaired on next load.");
+                  File renamed = new File(dir, ymlName);
+                  if (f.renameTo(renamed)) {
+                     this.plugin.getLogger().info("Renamed " + f.getName() + " to " + ymlName + " for repair on next load.");
+                  } else {
+                     this.plugin.getLogger().warning("Could not rename " + f.getName() + " - it will be retried next startup.");
+                  }
                }
+            } else {
+               f.delete();
             }
-
-            f.delete();
          }
       }
    }
@@ -313,13 +323,20 @@ public class LootBagManager {
       if (rewards == null || rewards.isEmpty()) {
          sb.append("  []\n");
       } else {
-         try {
-            List<Object> list = jsonMapper.convertValue(rewards, List.class);
-            for (Object obj : list) {
-               String json = jsonMapper.writeValueAsString(obj);
+         boolean anyWritten = false;
+         for (Object reward : rewards) {
+            try {
+               Object mapped = jsonMapper.convertValue(reward, Object.class);
+               String json = jsonMapper.writeValueAsString(mapped);
                sb.append("  - ").append(yamlQuote(json)).append("\n");
+               anyWritten = true;
+            } catch (Exception var8) {
+               sb.append("  - '").append("INVALID_REWARD_SKIPPED").append("'\n");
+               this.plugin.getLogger().warning("Skipped a reward that could not be serialized: " + var8.getMessage());
             }
-         } catch (Exception var6) {
+         }
+
+         if (!anyWritten) {
             sb.append("  []\n");
          }
       }
