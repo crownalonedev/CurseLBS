@@ -135,33 +135,52 @@ public class LootBagManager {
       }
    }
 
-   public void saveToDisk() {
-      File dir = new File(this.path + "/lootbags");
-      dir.mkdir();
-      ObjectMapper mapper = new ObjectMapper();
-      mapper.enable(SerializationFeature.INDENT_OUTPUT);
-      mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
-      mapper.setVisibility(VisibilityChecker.Std.defaultInstance().withFieldVisibility(JsonAutoDetect.Visibility.ANY));
+   private volatile boolean dirty = false;
+   private final Object saveLock = new Object();
 
-      if (this.originalDump == null) {
-         this.originalDump = Lists.newArrayList(this.LootBags);
+   public void saveToDisk() {
+      this.dirty = true;
+   }
+
+   public void forceSaveToDisk() {
+      this.dirty = true;
+      this.processSave();
+   }
+
+   public void processSave() {
+      if (!this.dirty) {
+         return;
       }
 
-      for (LootBag LootBag2 : this.originalDump) {
-         if (!this.LootBags.contains(LootBag2)) {
-            new File(this.path + "/lootbags/" + LootBag2.getInternalName() + ".json").delete();
-         } else {
-            File jsonFile = new File(this.path + "/lootbags/" + LootBag2.getInternalName() + ".json");
+      synchronized (this.saveLock) {
+         this.dirty = false;
+         File dir = new File(this.path + "/lootbags");
+         dir.mkdir();
+         ObjectMapper mapper = new ObjectMapper();
+         mapper.enable(SerializationFeature.INDENT_OUTPUT);
+         mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+         mapper.setVisibility(VisibilityChecker.Std.defaultInstance().withFieldVisibility(JsonAutoDetect.Visibility.ANY));
 
-            try {
-               mapper.writeValue(jsonFile, LootBag2);
-            } catch (Exception var6) {
-               this.plugin.getLogger().warning("Failed to save lootbag " + LootBag2.getInternalName() + ": " + var6.toString());
+         if (this.originalDump == null) {
+            this.originalDump = Lists.newArrayList(this.LootBags);
+         }
+
+         for (LootBag LootBag2 : this.originalDump) {
+            if (!this.LootBags.contains(LootBag2)) {
+               new File(this.path + "/lootbags/" + LootBag2.getInternalName() + ".json").delete();
+            } else {
+               File jsonFile = new File(this.path + "/lootbags/" + LootBag2.getInternalName() + ".json");
+
+               try {
+                  mapper.writeValue(jsonFile, LootBag2);
+               } catch (Exception var8) {
+                  this.plugin.getLogger().warning("Failed to save lootbag " + LootBag2.getInternalName() + ": " + var8.toString());
+               }
             }
          }
-      }
 
-      this.originalDump = Lists.newArrayList(this.LootBags);
+         this.originalDump = Lists.newArrayList(this.LootBags);
+      }
    }
 
    public JavaPlugin getPlugin() {

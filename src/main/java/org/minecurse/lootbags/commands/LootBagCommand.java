@@ -151,7 +151,7 @@ public class LootBagCommand extends BaseCommand {
    @CommandPermission("curse.admin")
    @Subcommand("save")
    public void onSave(CommandSender sender) {
-      LootBagManager.getInstance().saveToDisk();
+      LootBagManager.getInstance().forceSaveToDisk();
       sender.sendMessage(LootBagPlugin.prefix("All lootbags have been saved to disk."));
    }
 
@@ -159,6 +159,7 @@ public class LootBagCommand extends BaseCommand {
    @Subcommand("reload")
    public void onReload(CommandSender sender) {
       LootBagPlugin plugin = LootBagPlugin.getInstance();
+      LootBagManager.getInstance().forceSaveToDisk();
       plugin.reloadConfig();
       Settings.load(plugin.getConfig());
       LootBagManager.getInstance().loadFromDisk();
