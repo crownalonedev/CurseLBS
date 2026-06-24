@@ -64,10 +64,10 @@ public class LootBag {
       this.broadcast = false;
       this.bundle = false;
       this.glowing = false;
-      this.bonusLore = true;
+      this.bonusLore = false;
       this.alwaysMax = true;
       this.showcasedLootBag = false;
-      this.rewardLore = true;
+      this.rewardLore = false;
       this.type = CrateType.LOOTBAG;
       this.animationType = AnimationType.NORMAL;
    }
