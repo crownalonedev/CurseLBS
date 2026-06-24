@@ -3,6 +3,7 @@ package org.minecurse.lootbags.menus;
 import com.google.common.collect.Lists;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
