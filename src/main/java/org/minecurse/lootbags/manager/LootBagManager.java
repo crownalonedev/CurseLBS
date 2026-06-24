@@ -120,7 +120,7 @@ public class LootBagManager {
          jsonMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
          jsonMapper.setVisibility(VisibilityChecker.Std.defaultInstance().withFieldVisibility(JsonAutoDetect.Visibility.ANY));
 
-         this.convertOldJsonFiles(dir, jsonMapper);
+         this.renameJsonToYml(dir);
 
          for (File f : Objects.requireNonNull(dir.listFiles())) {
             String name = f.getName().toLowerCase();
@@ -131,14 +131,14 @@ public class LootBagManager {
                      this.LootBags.add(loaded);
                   }
                } catch (Exception var10) {
-                  this.plugin.getLogger().warning("Failed to parse " + f.getName() + " normally, attempting repair: " + var10.getMessage());
+                  this.plugin.getLogger().warning("Failed to parse " + f.getName() + " normally, attempting repair: " + var10.toString());
                   try {
                      LootBag salvaged = this.repairAndLoad(f, jsonMapper);
                      if (salvaged != null) {
                         this.LootBags.add(salvaged);
                      }
                   } catch (Exception var9) {
-                     this.plugin.getLogger().severe("Could not repair " + f.getName() + ": " + var9.getMessage());
+                     this.plugin.getLogger().severe("Could not repair " + f.getName() + ": " + var9.toString());
                   }
                }
             }
@@ -151,33 +151,19 @@ public class LootBagManager {
       }
    }
 
-   private void convertOldJsonFiles(File dir, ObjectMapper jsonMapper) {
+   private void renameJsonToYml(File dir) {
       for (File f : Objects.requireNonNull(dir.listFiles())) {
          if (f.getName().toLowerCase().endsWith(".json")) {
             String ymlName = f.getName().substring(0, f.getName().length() - 5) + ".yml";
             File ymlFile = new File(dir, ymlName);
-            if (!ymlFile.exists()) {
-               try {
-                  LootBag bag = jsonMapper.readValue(f, LootBag.class);
-                  if (bag != null) {
-                     this.writeYaml(ymlFile, bag, jsonMapper);
-                     this.plugin.getLogger().info("Converted " + f.getName() + " to " + ymlName);
-                     f.delete();
-                  } else {
-                     this.plugin.getLogger().warning("Skipped empty JSON: " + f.getName());
-                  }
-               } catch (Exception var8) {
-                  this.plugin.getLogger().warning("Failed to convert " + f.getName() + " to YAML: " + var8.toString());
-                  this.plugin.getLogger().warning("Original JSON kept. Attempting direct rename to .yml so it can be repaired on next load.");
-                  File renamed = new File(dir, ymlName);
-                  if (f.renameTo(renamed)) {
-                     this.plugin.getLogger().info("Renamed " + f.getName() + " to " + ymlName + " for repair on next load.");
-                  } else {
-                     this.plugin.getLogger().warning("Could not rename " + f.getName() + " - it will be retried next startup.");
-                  }
-               }
-            } else {
+            if (ymlFile.exists()) {
                f.delete();
+            } else {
+               if (f.renameTo(ymlFile)) {
+                  this.plugin.getLogger().info("Renamed " + f.getName() + " to " + ymlName);
+               } else {
+                  this.plugin.getLogger().warning("Could not rename " + f.getName() + " to .yml - will try loading it as-is.");
+               }
             }
          }
       }
@@ -200,11 +186,15 @@ public class LootBagManager {
             new File(this.path + "/lootbags/" + LootBag2.getInternalName() + ".json").delete();
          } else {
             File ymlFile = new File(this.path + "/lootbags/" + LootBag2.getInternalName() + ".yml");
+            File oldJson = new File(this.path + "/lootbags/" + LootBag2.getInternalName() + ".json");
 
             try {
                this.writeYaml(ymlFile, LootBag2, jsonMapper);
+               if (oldJson.exists()) {
+                  oldJson.delete();
+               }
             } catch (Exception var6) {
-               this.plugin.getLogger().warning("Failed to save lootbag " + LootBag2.getInternalName() + ": " + var6.getMessage());
+               this.plugin.getLogger().warning("Failed to save lootbag " + LootBag2.getInternalName() + ": " + var6.toString());
             }
          }
       }
