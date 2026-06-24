@@ -133,10 +133,8 @@ public class LootBagManager {
                } catch (Exception var10) {
                   this.plugin.getLogger().warning("Failed to parse " + f.getName() + " normally, attempting repair: " + var10.getMessage());
                   try {
-                     LootBag salvaged = this.salvageYaml(f, jsonMapper);
+                     LootBag salvaged = this.repairAndLoad(f, jsonMapper);
                      if (salvaged != null) {
-                        this.writeYaml(f, salvaged, jsonMapper);
-                        this.plugin.getLogger().info("Repaired and re-saved " + f.getName());
                         this.LootBags.add(salvaged);
                      }
                   } catch (Exception var9) {
@@ -367,69 +365,143 @@ public class LootBagManager {
    }
 
    @SuppressWarnings("unchecked")
-   private LootBag salvageYaml(File file, ObjectMapper jsonMapper) throws IOException {
+   private LootBag repairAndLoad(File file, ObjectMapper jsonMapper) throws IOException {
       String content = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
-      String[] lines = content.split("\n", -1);
-      Map<String, Object> data = new java.util.LinkedHashMap<>();
-      StringBuilder itemBlob = null;
+      String repaired = this.repairMultilineValues(content);
 
-      for (String rawLine : lines) {
-         String line = rawLine.replaceAll("\r$", "");
-         String trimmed = line.trim();
-         if (trimmed.isEmpty() || trimmed.startsWith("#")) {
+      LootBag bag = null;
+      try {
+         Yaml yaml = new Yaml();
+         Object loaded = yaml.load(repaired);
+         if (loaded instanceof Map) {
+            Map<String, Object> data = (Map<String, Object>) loaded;
+            bag = jsonMapper.convertValue(data, LootBag.class);
+         }
+      } catch (Exception var8) {
+         this.plugin.getLogger().warning("Repair attempt for " + file.getName() + " still failed: " + var8.getMessage());
+      }
+
+      if (bag != null) {
+         try {
+            this.writeYaml(file, bag, jsonMapper);
+            this.plugin.getLogger().info("Repaired and re-saved " + file.getName());
+         } catch (Exception var7) {
+            this.plugin.getLogger().warning("Loaded " + file.getName() + " but could not re-save it: " + var7.getMessage());
+         }
+      }
+
+      return bag;
+   }
+
+   private String repairMultilineValues(String content) {
+      String[] lines = content.split("\n", -1);
+      StringBuilder out = new StringBuilder();
+      String currentListKey = null;
+
+      for (int i = 0; i < lines.length; i++) {
+         String line = lines[i];
+         String trimmed = line.replaceAll("\r$", "");
+         String stripped = trimmed.trim();
+
+         if (stripped.isEmpty() || stripped.startsWith("#")) {
+            out.append(trimmed).append("\n");
             continue;
          }
 
-         int colonIdx = -1;
-         for (int i = 0; i < trimmed.length(); i++) {
-            if (trimmed.charAt(i) == ':') {
-               if (i + 1 >= trimmed.length() || trimmed.charAt(i + 1) == ' ') {
-                  colonIdx = i;
-                  break;
-               }
+         if (stripped.startsWith("- ")) {
+            if (currentListKey != null) {
+               out.append(trimmed).append("\n");
+            } else {
+               out.append(trimmed).append("\n");
             }
+            continue;
          }
 
-         if (itemBlob != null) {
-            if (colonIdx > 0 && this.isKnownKey(trimmed.substring(0, colonIdx))) {
-               if (itemBlob.length() > 0) {
-                  data.put("item", itemBlob.toString());
+         int colonIdx = this.findKeyColon(stripped);
+         if (colonIdx > 0) {
+            String key = stripped.substring(0, colonIdx).trim();
+            String value = (colonIdx + 1 < stripped.length()) ? stripped.substring(colonIdx + 1).trim() : "";
+            currentListKey = null;
+
+            if (value.isEmpty() || value.equals("[]")) {
+               if (this.isListKey(key)) {
+                  currentListKey = key;
                }
-               itemBlob = null;
-            } else {
-               itemBlob.append(trimmed);
+               out.append(trimmed).append("\n");
+               continue;
+            }
+
+            if ((key.equals("item") || key.equals("texture") || key.equals("displayName") || key.equals("material"))
+                  && (value.startsWith("'") || value.startsWith("\"") || this.looksLikeBase64Start(value))) {
+               StringBuilder fullValue = new StringBuilder(this.stripYamlQuotes(value));
+               int j = i + 1;
+               while (j < lines.length) {
+                  String nextTrimmed = lines[j].replaceAll("\r$", "");
+                  String nextStripped = nextTrimmed.trim();
+                  if (nextStripped.isEmpty() || nextStripped.startsWith("#") || nextStripped.startsWith("- ")) {
+                     break;
+                  }
+
+                  int nextColon = this.findKeyColon(nextStripped);
+                  if (nextColon > 0 && this.isKnownKey(nextStripped.substring(0, nextColon).trim())) {
+                     break;
+                  }
+
+                  if (nextColon > 0 && this.isListKey(nextStripped.substring(0, nextColon).trim())) {
+                     break;
+                  }
+
+                  fullValue.append(nextStripped);
+                  j++;
+               }
+
+               out.append(key).append(": ").append(this.yamlQuote(fullValue.toString())).append("\n");
+               i = j - 1;
                continue;
             }
          }
 
-         if (colonIdx <= 0) {
-            continue;
-         }
+         out.append(trimmed).append("\n");
+      }
 
-         String key = trimmed.substring(0, colonIdx).trim();
-         String value = (colonIdx + 1 < trimmed.length()) ? trimmed.substring(colonIdx + 1).trim() : "";
-         value = this.stripYamlQuotes(value);
+      return out.toString();
+   }
 
-         if (key.equals("item")) {
-            itemBlob = new StringBuilder(value);
-         } else if (key.equals("lore")) {
-            data.put("lore", new java.util.ArrayList<String>());
-         } else if (key.equals("rewards") || key.equals("jackpotRewards") || key.equals("bonusRewards")) {
-            data.put(key, new java.util.ArrayList<>());
-         } else {
-            data.put(key, value);
+   private int findKeyColon(String line) {
+      boolean inSingleQuote = false;
+      boolean inDoubleQuote = false;
+
+      for (int i = 0; i < line.length(); i++) {
+         char c = line.charAt(i);
+         if (c == '\'' && !inDoubleQuote) {
+            inSingleQuote = !inSingleQuote;
+         } else if (c == '"' && !inSingleQuote) {
+            inDoubleQuote = !inDoubleQuote;
+         } else if (c == ':' && !inSingleQuote && !inDoubleQuote) {
+            if (i + 1 >= line.length() || line.charAt(i + 1) == ' ' || i + 1 == line.length()) {
+               return i;
+            }
          }
       }
 
-      if (itemBlob != null && itemBlob.length() > 0) {
-         data.put("item", itemBlob.toString());
+      return -1;
+   }
+
+   private boolean looksLikeBase64Start(String value) {
+      if (value.isEmpty()) {
+         return false;
       }
 
-      if (!data.containsKey("internalName") && !data.containsKey("item")) {
-         return null;
+      if (value.startsWith("'") || value.startsWith("\"")) {
+         String inner = value.substring(1);
+         return !inner.isEmpty() && inner.matches("[A-Za-z0-9+/=].*");
       } else {
-         return jsonMapper.convertValue(data, LootBag.class);
+         return value.matches("[A-Za-z0-9+/=]+.*") && value.length() > 20;
       }
+   }
+
+   private boolean isListKey(String key) {
+      return key.equals("lore") || key.equals("rewards") || key.equals("jackpotRewards") || key.equals("bonusRewards");
    }
 
    private boolean isKnownKey(String key) {
