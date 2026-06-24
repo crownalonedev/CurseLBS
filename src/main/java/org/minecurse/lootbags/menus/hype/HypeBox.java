@@ -54,7 +54,11 @@ public class HypeBox implements InventoryProvider {
       LootBagPlugin.getInstance().getHypeManager().getActiveHypeBoxes().add(this);
 
       for (int i = 0; i < this.tickEndingPoint; i++) {
-         this.displayingItems.add(RewardUtils.getRandomReward(this.getLootBag().getRewards()).getItemStack());
+         ItemStack displayItem = this.safeRewardItem(RewardUtils.getRandomReward(this.getLootBag().getRewards()));
+         if (displayItem == null) {
+            displayItem = new ItemStack(Material.BARRIER);
+         }
+         this.displayingItems.add(displayItem);
       }
 
       for (Player all : Bukkit.getOnlinePlayers()) {
@@ -72,7 +76,8 @@ public class HypeBox implements InventoryProvider {
       }
 
       this.reward = RewardUtils.getRandomReward(lootBag.getRewards());
-      this.displayingItems.set(41, this.reward.getItemStack());
+      ItemStack rewardItem = this.safeRewardItem(this.reward);
+      this.displayingItems.set(41, rewardItem != null ? rewardItem : new ItemStack(Material.BARRIER));
       this.inventory = SmartInventory.builder()
          .id("hype-box")
          .provider(this)
@@ -111,8 +116,10 @@ public class HypeBox implements InventoryProvider {
       if (this.ticks >= 30 && !this.justRigged) {
          List<Reward> filtered = this.lootBag.getRewards().stream().filter(reward -> reward.getRarity() == Rarity.LEGENDARY).collect(Collectors.toList());
          if (!filtered.isEmpty()) {
-            this.displayingItems.set(3, filtered.get(RandomUtil.getRandInt(0, filtered.size() - 1)).getItemStack().clone());
-            this.displayingItems.set(5, filtered.get(RandomUtil.getRandInt(0, filtered.size() - 1)).getItemStack().clone());
+            ItemStack rigged1 = this.safeRewardItem(filtered.get(RandomUtil.getRandInt(0, filtered.size() - 1)));
+            ItemStack rigged2 = this.safeRewardItem(filtered.get(RandomUtil.getRandInt(0, filtered.size() - 1)));
+            if (rigged1 != null) this.displayingItems.set(3, rigged1.clone());
+            if (rigged2 != null) this.displayingItems.set(5, rigged2.clone());
             this.justRigged = true;
          }
       }
@@ -188,5 +195,17 @@ public class HypeBox implements InventoryProvider {
 
    public boolean isAlreadyCalled() {
       return this.alreadyCalled;
+   }
+
+   private ItemStack safeRewardItem(Reward reward) {
+      if (reward == null) {
+         return null;
+      }
+
+      try {
+         return reward.getItemStack();
+      } catch (Exception var3) {
+         return null;
+      }
    }
 }

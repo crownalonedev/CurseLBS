@@ -40,217 +40,36 @@ public class LootBagCreationMenu implements Listener {
    public LootBagCreationMenu(LootBag lootBag) {
       this.lootBag = lootBag;
       Bukkit.getServer().getPluginManager().registerEvents(this, LootManagerPlugin.getInstance());
-      this.menu = new ChestMenu("Lootbag Creation: " + lootBag.getInternalName(), 6);
+      this.menu = new ChestMenu("Editing: " + lootBag.getInternalName(), 5);
    }
 
    public void show(Player player) {
-      ItemStack item = this.lootBag.getLootBag();
-
-      // ── Section helpers ──────────────────────────────────────────────
-      // Display section (top row of content)
-      ItemBuilder display = new ItemBuilder(Material.NAME_TAG)
-         .name("&3&lDisplay Name")
-         .lore("&7Current: &f" + this.lootBag.getDisplayName())
-         .lore("")
-         .lore("&a&l» &7Click to rename via chat.");
-      ItemBuilder lore = new ItemBuilder(Material.BOOK_AND_QUILL)
-         .name("&6&lLore Lines")
-         .lore(
-            this.lootBag.getLore() != null && !this.lootBag.getLore().isEmpty()
-               ? this.lootBag.getLore()
-               : Lists.newArrayList("&fNo lore set.")
-         )
-         .lore("")
-         .lore("&a&l» &7Click to add a lore line via chat.")
-         .lore("&7Type 'clear' to wipe, 'cancel' to abort.");
-      ItemBuilder internal = new ItemBuilder(Material.PAPER)
-         .name("&3&lInternal Name")
-         .lore("&7Current: &f" + this.lootBag.getInternalName())
-         .lore("")
-         .lore("&a&l» &7Click to rename via chat.");
-      ItemBuilder material = new ItemBuilder(this.lootBag.getMaterial())
-         .name("&b&lMaterial")
-         .lore("&7Current: &f" + this.lootBag.getMaterial().name())
-         .lore("")
-         .lore("&a&l» &7Hold an item, then click & type.");
-      boolean hasTexture = this.lootBag.hasTexture();
-      ItemBuilder texture = new ItemBuilder(Material.SKULL_ITEM)
-         .durability(hasTexture ? 3 : 0)
-         .name("&5&lBase64 Texture")
-         .lore("&7Status: " + (hasTexture ? "&a&lSet" : "&c&lNone"))
-         .lore("")
-         .lore("&a&l» &7Click to paste a base64 value in chat.")
-         .lore("&7Type 'remove' to clear, 'cancel' to abort.");
-      ItemBuilder metaData = new ItemBuilder(Material.ENDER_CHEST)
-         .name("&d&lCopy Item Meta")
-         .lore("&7Copy display name, lore & enchants")
-         .lore("&7from the item you're holding.")
-         .lore("")
-         .lore("&a&l» &7Hold an item, then click & type.");
-
-      // Rewards section
-      ItemBuilder rewards = new ItemBuilder(Material.STORAGE_MINECART)
-         .name("&e&lEdit Rewards")
-         .lore("&7Rewards: &f" + this.lootBag.getRewards().size())
-         .lore("")
-         .lore("&a&l» &7Click to open the rewards editor.");
-      ItemBuilder min = new ItemBuilder(Material.ARROW)
-         .amount(this.lootBag.getMinRewards())
-         .name("&c&lMin Rewards")
-         .lore("&7Range: &f" + this.lootBag.getMinRewards() + " &8\u2192 &f" + this.lootBag.getMaxRewards())
-         .lore("")
-         .lore("&a&l» &7Click to set via chat.");
-      ItemBuilder max = new ItemBuilder(Material.ARROW)
-         .amount(this.lootBag.getMaxRewards())
-         .name("&a&lMax Rewards")
-         .lore("&7Current: &f" + this.lootBag.getMaxRewards())
-         .lore("")
-         .lore("&a&l» &7Click to set via chat.");
-      ItemBuilder alwaysMax = toggleItem(Material.GOLDEN_APPLE, "&d&lAlways Max", this.lootBag.isAlwaysMax(),
-         "&7Force max rewards every time.");
-      ItemBuilder bundle = toggleItem(Material.CHEST, "&a&lBundle Mode", this.lootBag.isBundle(),
-         "&7Give ALL rewards instead of random.");
-
-      // Toggles section
-      ItemBuilder glow = toggleItem(Material.GLOWSTONE_DUST, "&f&lItem Glow", this.lootBag.isGlowing(),
-         "&7Enchant-glow on the lootbag item.");
-      ItemBuilder broadcast = toggleItem(this.lootBag.isBroadcast() ? Material.REDSTONE_TORCH_ON : Material.TORCH,
-         "&d&lBroadcast Loot", this.lootBag.isBroadcast(), "&7Announce opens to the server.");
-      ItemBuilder bonusLore = toggleItem(this.lootBag.isBonusLore() ? Material.EMERALD_BLOCK : Material.REDSTONE_BLOCK,
-         "&e&lBonus Lore", this.lootBag.isBonusLore(), "&7Show bonus-reward lore lines.");
-      ItemBuilder hideRewardLore = toggleItem(this.lootBag.isRewardLore() ? Material.EMERALD_BLOCK : Material.REDSTONE_BLOCK,
-         "&2&lReward Lore", this.lootBag.isRewardLore(), "&7Show reward-list lore lines.");
-      ItemBuilder showcase = toggleItem(Material.BOOK, "&a&lShowcase", this.lootBag.isShowcasedLootBag(),
-         "&7Feature this lootbag in the display menu.");
-
-      // Type section
-      ItemBuilder lootBagType = new ItemBuilder(Material.ENDER_PORTAL_FRAME)
-         .name("&2&lLootbag Type")
-         .lore("&7Current: &f" + this.lootBag.getType().name())
-         .lore("")
-         .lore("&a&l» &7Click to cycle through types.");
-      ItemBuilder animationType = new ItemBuilder(Material.GLOWSTONE)
-         .name("&6&lAnimation Type")
-         .lore("&7Current: &f" + this.lootBag.getAnimationType().name())
-         .lore("")
-         .lore("&a&l» &7Click to cycle through animations.");
-
-      // ── Layout (6 rows = 54 slots) ───────────────────────────────────
       this.menu.fillSides(Button.PLACEHOLDER);
 
-      // Row 1 (slots 10-16): Identity & appearance
-      this.menu.setButton(10, new Button(display, (p, c) -> startChatEdit(p, EditType.DISPLAY,
-         "&7Current display: " + this.lootBag.getDisplayName(),
-         "&7Type the new display name (use & codes for colors).")));
-      this.menu.setButton(11, new Button(internal, (p, c) -> startChatEdit(p, EditType.INTERNAL,
-         "&7Current internal: " + this.lootBag.getInternalName(),
-         "&7Type the new internal name (A-Z, 0-9, _ only).")));
-      this.menu.setButton(12, new Button(lore, (p, c) -> startChatEdit(p, EditType.LORE,
-         "&7Type a new lore line to ADD it.",
-         "&7Type 'clear' to wipe all lore, 'cancel' to abort.")));
-      this.menu.setButton(13, new Button(material, (p, c) -> startChatEdit(p, EditType.MATERIAL,
-         "&7Hold the item you want as the material, then type anything.")));
-      this.menu.setButton(14, new Button(texture, (p, c) -> {
-         this.editType.put(p.getUniqueId(), EditType.TEXTURE);
-         p.sendMessage(LootBagPlugin.prefix("&6Base64 Texture Editor"));
-         p.sendMessage(LootBagPlugin.prefix("&7Status: " + (this.lootBag.hasTexture() ? "&aSet" : "&cNone")));
-         p.sendMessage(LootBagPlugin.prefix("&7Paste the base64 value in chat."));
-         p.sendMessage(LootBagPlugin.prefix("&7Type 'remove' to clear, 'cancel' to abort."));
-         p.closeInventory();
-      }));
-      this.menu.setButton(15, new Button(metaData, (p, c) -> startChatEdit(p, EditType.META,
-         "&7Hold an item with the name/lore/enchants you want to copy, then type.")));
-      this.menu.setButton(16, new Button(item, (p, c) -> p.getInventory().addItem(new ItemStack[]{item})));
+      ItemStack preview = this.lootBag.getLootBag();
 
-      // Row 2 (slots 19-25): Rewards
-      this.menu.setButton(19, new Button(rewards, (p, c) -> new RewardMenu(this.lootBag).show(p)));
-      this.menu.setButton(20, new Button(min, (p, c) -> {
-         if (this.lootBag.isBundle()) {
-            p.sendMessage(LootBagPlugin.prefix("&cDisable Bundle mode first."));
-            return;
-         }
-         if (this.lootBag.isAlwaysMax()) {
-            p.sendMessage(LootBagPlugin.prefix("&cDisable Always Max first."));
-            return;
-         }
-         startChatEdit(p, EditType.MIN, "&7Type a number between 1 and " + this.lootBag.getMaxRewards() + ".");
-      }));
-      this.menu.setButton(21, new Button(max, (p, c) -> {
-         if (this.lootBag.isBundle()) {
-            p.sendMessage(LootBagPlugin.prefix("&cDisable Bundle mode first."));
-            return;
-         }
-         if (this.lootBag.isAlwaysMax()) {
-            p.sendMessage(LootBagPlugin.prefix("&cDisable Always Max first."));
-            return;
-         }
-         startChatEdit(p, EditType.MAX, "&7Current max: " + this.lootBag.getMaxRewards() + ". Type a new number.");
-      }));
-      this.menu.setButton(22, new Button(alwaysMax, (p, c) -> {
-         if (this.lootBag.isBundle()) {
-            p.sendMessage(LootBagPlugin.prefix("&cDisable Bundle mode first."));
-            return;
-         }
-         this.lootBag.setAlwaysMax(!this.lootBag.isAlwaysMax());
-         p.sendMessage(LootBagPlugin.prefix("Always Max: " + RetroUtils.formatBoolean(this.lootBag.isAlwaysMax())));
-         this.refreshMenu(p);
-      }));
-      this.menu.setButton(23, new Button(bundle, (p, c) -> {
-         this.lootBag.setBundle(!this.lootBag.isBundle());
-         p.sendMessage(LootBagPlugin.prefix("Bundle Mode: " + RetroUtils.formatBoolean(this.lootBag.isBundle())));
-         this.refreshMenu(p);
-      }));
-      this.menu.setButton(24, new Button(lootBagType, (p, c) -> {
-         CrateType[] types = CrateType.values();
-         CrateType next = types[(this.lootBag.getType().ordinal() + 1) % types.length];
-         this.lootBag.setType(next);
-         p.sendMessage(LootBagPlugin.prefix("Lootbag Type: &f" + next.name()));
-         this.refreshMenu(p);
-      }));
-      this.menu.setButton(25, new Button(animationType, (p, c) -> {
-         AnimationType[] types = AnimationType.values();
-         AnimationType next = types[(this.lootBag.getAnimationType().ordinal() + 1) % types.length];
-         this.lootBag.setAnimationType(next);
-         p.sendMessage(LootBagPlugin.prefix("Animation Type: &f" + next.name()));
-         this.refreshMenu(p);
-      }));
+      this.menu.setButton(4, new Button(new ItemBuilder(preview).name("&f&l" + this.lootBag.getDisplayName()).lore("&7This is how your lootbag looks."), (p, c) -> p.getInventory().addItem(new ItemStack[]{preview})));
 
-      // Row 3 (slots 28-34): Toggles
-      this.menu.setButton(28, new Button(glow, (p, c) -> {
-         this.lootBag.setGlowing(!this.lootBag.isGlowing());
-         p.sendMessage(LootBagPlugin.prefix("Item Glow: " + RetroUtils.formatBoolean(this.lootBag.isGlowing())));
-         this.refreshMenu(p);
-      }));
-      this.menu.setButton(29, new Button(broadcast, (p, c) -> {
-         this.lootBag.setBroadcast(!this.lootBag.isBroadcast());
-         p.sendMessage(LootBagPlugin.prefix("Broadcast: " + RetroUtils.formatBoolean(this.lootBag.isBroadcast())));
-         this.refreshMenu(p);
-      }));
-      this.menu.setButton(30, new Button(bonusLore, (p, c) -> {
-         this.lootBag.setBonusLore(!this.lootBag.isBonusLore());
-         p.sendMessage(LootBagPlugin.prefix("Bonus Lore: " + RetroUtils.formatBoolean(this.lootBag.isBonusLore())));
-         this.refreshMenu(p);
-      }));
-      this.menu.setButton(31, new Button(hideRewardLore, (p, c) -> {
-         this.lootBag.setRewardLore(!this.lootBag.isRewardLore());
-         p.sendMessage(LootBagPlugin.prefix("Reward Lore: " + RetroUtils.formatBoolean(this.lootBag.isRewardLore())));
-         this.refreshMenu(p);
-      }));
-      this.menu.setButton(32, new Button(showcase, (p, c) -> {
-         if (LootBagManager.getInstance().isAlreadyToggled() && LootBagManager.getInstance().findShowcasedLootBag() != this.lootBag) {
-            p.sendMessage(LootBagPlugin.prefix("&cDisable showcase on \"" + LootBagManager.getInstance().findShowcasedLootBag().getInternalName() + "\" first."));
-            return;
-         }
-         this.lootBag.setShowcasedLootBag(!this.lootBag.isShowcasedLootBag());
-         p.sendMessage(LootBagPlugin.prefix("Showcase: " + RetroUtils.formatBoolean(this.lootBag.isShowcasedLootBag())));
-         this.refreshMenu(p);
-      }));
+      this.menu.setButton(19, new Button(new ItemBuilder(Material.NAME_TAG).name("&3&lDisplay Name").lore("&7" + this.lootBag.getDisplayName()).lore("").lore("&a&l» &7Click to edit in chat."), (p, c) -> this.startChatEdit(p, EditType.DISPLAY, "&7Current: " + this.lootBag.getDisplayName(), "&7Type the new display name (& color codes allowed).")));
+      this.menu.setButton(21, new Button(new ItemBuilder(Material.BOOK_AND_QUILL).name("&6&lLore").lore("&7Lines: &f" + (this.lootBag.getLore() != null ? this.lootBag.getLore().size() : 0)).lore("").lore("&a&l» &7Click to add a line in chat.").lore("&7Type 'clear' to wipe, 'cancel' to stop."), (p, c) -> this.startChatEdit(p, EditType.LORE, "&7Type a lore line to add.", "&7Type 'clear' to wipe, 'cancel' to finish.")));
+      this.menu.setButton(23, new Button(new ItemBuilder(this.lootBag.getMaterial()).name("&b&lMaterial").lore("&7" + this.lootBag.getMaterial().name()).lore("").lore("&a&l» &7Hold an item, click & type."), (p, c) -> this.startChatEdit(p, EditType.MATERIAL, "&7Hold the item to use as material, then type anything.")));
+      this.menu.setButton(25, new Button(new ItemBuilder(Material.SKULL_ITEM).durability(this.lootBag.hasTexture() ? 3 : 0).name("&5&lTexture").lore("&7" + (this.lootBag.hasTexture() ? "&aSet" : "&cNone")).lore("").lore("&a&l» &7Click to set base64 in chat.").lore("&7Type 'remove' to clear, 'cancel' to stop."), (p, c) -> { this.editType.put(p.getUniqueId(), EditType.TEXTURE); p.sendMessage(LootBagPlugin.prefix("&6Texture Editor &7- Status: " + (this.lootBag.hasTexture() ? "&aSet" : "&cNone"))); p.sendMessage(LootBagPlugin.prefix("&7Paste base64 in chat. 'remove' to clear, 'cancel' to abort.")); p.closeInventory(); }));
 
-      // Bottom: back button
-      this.menu.setButton(49, new Button(
-         new ItemBuilder(Material.ARROW).name("&b&l« Go Back").lore("&7Return to the lootbag list."),
-         (p, c) -> new LootbagListMenu(this.lootBag.getType()).show(p)
-      ));
+      this.menu.setButton(29, new Button(new ItemBuilder(Material.STORAGE_MINECART).name("&e&lRewards").lore("&7Count: &f" + this.lootBag.getRewards().size()).lore("").lore("&a&l» &7Click to edit rewards."), (p, c) -> new RewardMenu(this.lootBag).show(p)));
+      this.menu.setButton(31, new Button(new ItemBuilder(Material.ARROW).amount(this.lootBag.getMaxRewards()).name("&a&lMax Rewards").lore("&7Min: &f" + this.lootBag.getMinRewards() + " &8| &7Max: &f" + this.lootBag.getMaxRewards()).lore("").lore("&a&l» &7Click to set max via chat."), (p, c) -> { if (this.lootBag.isBundle()) { p.sendMessage(LootBagPlugin.prefix("&cDisable Bundle first.")); return; } this.startChatEdit(p, EditType.MAX, "&7Current max: " + this.lootBag.getMaxRewards() + ". Type a new number."); }));
+      this.menu.setButton(33, new Button(new ItemBuilder(Material.ARROW).amount(this.lootBag.getMinRewards()).name("&c&lMin Rewards").lore("&7Min: &f" + this.lootBag.getMinRewards()).lore("").lore("&a&l» &7Click to set min via chat."), (p, c) -> { if (this.lootBag.isBundle()) { p.sendMessage(LootBagPlugin.prefix("&cDisable Bundle first.")); return; } if (this.lootBag.isAlwaysMax()) { p.sendMessage(LootBagPlugin.prefix("&cDisable Always Max first.")); return; } this.startChatEdit(p, EditType.MIN, "&7Type a number between 1 and " + this.lootBag.getMaxRewards() + "."); }));
+
+      this.menu.setButton(37, new Button(this.toggleItem(Material.GOLDEN_APPLE, "&d&lAlways Max", this.lootBag.isAlwaysMax()), (p, c) -> { if (this.lootBag.isBundle()) { p.sendMessage(LootBagPlugin.prefix("&cDisable Bundle first.")); return; } this.lootBag.setAlwaysMax(!this.lootBag.isAlwaysMax()); p.sendMessage(LootBagPlugin.prefix("Always Max: " + RetroUtils.formatBoolean(this.lootBag.isAlwaysMax()))); this.refreshMenu(p); }));
+      this.menu.setButton(38, new Button(this.toggleItem(Material.CHEST, "&a&lBundle", this.lootBag.isBundle()), (p, c) -> { this.lootBag.setBundle(!this.lootBag.isBundle()); p.sendMessage(LootBagPlugin.prefix("Bundle: " + RetroUtils.formatBoolean(this.lootBag.isBundle()))); this.refreshMenu(p); }));
+      this.menu.setButton(39, new Button(this.toggleItem(Material.GLOWSTONE_DUST, "&f&lGlow", this.lootBag.isGlowing()), (p, c) -> { this.lootBag.setGlowing(!this.lootBag.isGlowing()); p.sendMessage(LootBagPlugin.prefix("Glow: " + RetroUtils.formatBoolean(this.lootBag.isGlowing()))); this.refreshMenu(p); }));
+      this.menu.setButton(40, new Button(this.toggleItem(this.lootBag.isBroadcast() ? Material.REDSTONE_TORCH_ON : Material.TORCH, "&d&lBroadcast", this.lootBag.isBroadcast()), (p, c) -> { this.lootBag.setBroadcast(!this.lootBag.isBroadcast()); p.sendMessage(LootBagPlugin.prefix("Broadcast: " + RetroUtils.formatBoolean(this.lootBag.isBroadcast()))); this.refreshMenu(p); }));
+      this.menu.setButton(41, new Button(this.toggleItem(this.lootBag.isBonusLore() ? Material.EMERALD_BLOCK : Material.REDSTONE_BLOCK, "&e&lBonus Lore", this.lootBag.isBonusLore()), (p, c) -> { this.lootBag.setBonusLore(!this.lootBag.isBonusLore()); p.sendMessage(LootBagPlugin.prefix("Bonus Lore: " + RetroUtils.formatBoolean(this.lootBag.isBonusLore()))); this.refreshMenu(p); }));
+      this.menu.setButton(42, new Button(this.toggleItem(this.lootBag.isRewardLore() ? Material.EMERALD_BLOCK : Material.REDSTONE_BLOCK, "&2&lReward Lore", this.lootBag.isRewardLore()), (p, c) -> { this.lootBag.setRewardLore(!this.lootBag.isRewardLore()); p.sendMessage(LootBagPlugin.prefix("Reward Lore: " + RetroUtils.formatBoolean(this.lootBag.isRewardLore()))); this.refreshMenu(p); }));
+      this.menu.setButton(43, new Button(this.toggleItem(Material.BOOK, "&a&lShowcase", this.lootBag.isShowcasedLootBag()), (p, c) -> { if (LootBagManager.getInstance().isAlreadyToggled() && LootBagManager.getInstance().findShowcasedLootBag() != this.lootBag) { p.sendMessage(LootBagPlugin.prefix("&cDisable showcase on \"" + LootBagManager.getInstance().findShowcasedLootBag().getInternalName() + "\" first.")); return; } this.lootBag.setShowcasedLootBag(!this.lootBag.isShowcasedLootBag()); p.sendMessage(LootBagPlugin.prefix("Showcase: " + RetroUtils.formatBoolean(this.lootBag.isShowcasedLootBag()))); this.refreshMenu(p); }));
+
+      this.menu.setButton(48, new Button(new ItemBuilder(Material.PAPER).name("&3&lInternal Name").lore("&7" + this.lootBag.getInternalName()).lore("").lore("&a&l» &7Click to rename in chat."), (p, c) -> this.startChatEdit(p, EditType.INTERNAL, "&7Current: " + this.lootBag.getInternalName(), "&7Type the new internal name (A-Z, 0-9, _ only).")));
+      this.menu.setButton(49, new Button(new ItemBuilder(Material.ARROW).name("&b&l« Go Back").lore("&7Return to lootbag list."), (p, c) -> new LootbagListMenu(this.lootBag.getType()).show(p)));
+      this.menu.setButton(50, new Button(new ItemBuilder(Material.ENDER_PORTAL_FRAME).name("&2&lType: &f" + this.lootBag.getType().name()).lore("").lore("&a&l» &7Click to cycle type."), (p, c) -> { CrateType[] types = CrateType.values(); CrateType next = types[(this.lootBag.getType().ordinal() + 1) % types.length]; this.lootBag.setType(next); p.sendMessage(LootBagPlugin.prefix("Type: &f" + next.name())); this.refreshMenu(p); }));
 
       this.menu.buildInventory();
       this.menu.show(player);
@@ -264,12 +83,10 @@ public class LootBagCreationMenu implements Listener {
       player.closeInventory();
    }
 
-   private ItemBuilder toggleItem(Material material, String name, boolean enabled, String description) {
+   private ItemBuilder toggleItem(Material material, String name, boolean enabled) {
       return new ItemBuilder(material)
          .name(name)
-         .lore("&7Status: " + (enabled ? "&a&lENABLED" : "&c&lDISABLED"))
-         .lore("")
-         .lore(description)
+         .lore("&7" + (enabled ? "&a&lENABLED" : "&c&lDISABLED"))
          .lore("")
          .lore("&a&l» &7Click to toggle.");
    }
