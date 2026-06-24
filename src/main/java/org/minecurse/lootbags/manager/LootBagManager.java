@@ -130,6 +130,7 @@ public class LootBagManager {
       file.mkdir();
       ObjectMapper mapper = new ObjectMapper();
       mapper.enable(SerializationFeature.INDENT_OUTPUT);
+      mapper.setVisibility(VisibilityChecker.Std.defaultInstance().withFieldVisibility(JsonAutoDetect.Visibility.ANY));
 
       for (LootBag LootBag2 : this.originalDump) {
          if (!this.LootBags.contains(LootBag2)) {

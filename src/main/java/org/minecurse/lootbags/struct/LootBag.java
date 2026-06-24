@@ -1,6 +1,7 @@
 package org.minecurse.lootbags.struct;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.Lists;
 import de.tr7zw.nbtapi.NBTCompound;
 import de.tr7zw.nbtapi.NBTCompoundList;
@@ -31,8 +32,10 @@ import org.minecurse.modules.utils.ItemUtil;
 
 public class LootBag {
    private String internalName;
+   @JsonProperty("displayName")
    private String displayName;
    private String item;
+   @JsonProperty("texture")
    private String texture;
    private List<Reward> rewards;
    private List<Reward> jackpotRewards;
