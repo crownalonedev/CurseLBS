@@ -183,8 +183,21 @@ public class LootBag {
          head.setItemMeta(meta);
       }
 
+      this.applyTextureNbt(head);
+      return head;
+   }
+
+   @JsonIgnore
+   private void applyTextureNbt(ItemStack item) {
+      if (this.texture == null || this.texture.isEmpty()) {
+         return;
+      }
+
+      item.setType(Material.SKULL_ITEM);
+      item.setDurability((short) 3);
+
       try {
-         NBTItem nbt = new NBTItem(head);
+         NBTItem nbt = new NBTItem(item);
          NBTCompound skullOwner = nbt.addCompound("SkullOwner");
          skullOwner.setString("Id", UUID.randomUUID().toString());
          skullOwner.setString("Name", this.internalName == null ? "lootbag" : this.internalName);
@@ -192,11 +205,9 @@ public class LootBag {
          NBTCompoundList texturesList = properties.getCompoundList("textures");
          NBTListCompound textureEntry = texturesList.addCompound();
          textureEntry.setString("Value", this.texture);
-         head = nbt.getItem();
+         nbt.applyNBT(item);
       } catch (Exception ignored) {
       }
-
-      return head;
    }
 
    @JsonIgnore
@@ -355,7 +366,11 @@ public class LootBag {
 
       NBTItem item = new NBTItem(builder);
       item.setString("lootBagType", this.getInternalName());
-      return item.getItem();
+      ItemStack built = item.getItem();
+      if (this.texture != null && !this.texture.isEmpty()) {
+         this.applyTextureNbt(built);
+      }
+      return built;
    }
 
    @JsonIgnore
@@ -431,7 +446,11 @@ public class LootBag {
 
       NBTItem item = new NBTItem(builder);
       item.setString("lootBagType", this.getInternalName());
-      return item.getItem();
+      ItemStack built = item.getItem();
+      if (this.texture != null && !this.texture.isEmpty()) {
+         this.applyTextureNbt(built);
+      }
+      return built;
    }
 
    @JsonIgnore
