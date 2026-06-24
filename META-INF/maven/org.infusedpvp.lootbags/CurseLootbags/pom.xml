@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.cursepvp.lootbags</groupId>
+    <artifactId>CurseLootbags</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+
+    <repositories>
+        <repository>
+            <id>aikar</id>
+            <url>https://repo.aikar.co/content/groups/aikar/</url>
+        </repository>
+        <repository>
+            <id>codemc-repo</id>
+            <url>https://repo.codemc.io/repository/maven-public/</url>
+            <layout>default</layout>
+        </repository>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+        <repository>
+            <id>placeholderapi</id>
+            <url>https://repo.helpch.at/releases/</url>
+        </repository>
+    </repositories>
+    <build>
+        <defaultGoal>clean package</defaultGoal>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.7.0</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.2.4</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+    </build>
+    <dependencies>
+        <!-- Aikar Command Lib-->
+        <dependency>
+            <groupId>net.jodah</groupId>
+            <artifactId>expiringmap</artifactId>
+            <version>0.5.10</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>co.aikar</groupId>
+            <artifactId>acf-paper</artifactId> <!-- Don't forget to replace this -->
+            <version>0.5.1-SNAPSHOT</version> <!-- Replace this as well -->
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- Server JAR -->
+        <dependency>
+            <groupId>org.example</groupId>
+            <artifactId>wiewne</artifactId>
+            <scope>system</scope>
+            <version>1.0</version>
+            <systemPath>${project.basedir}/Libs/server.jar</systemPath>
+        </dependency>
+
+        <!-- ProtocolLib -->
+        <dependency>
+            <groupId>org.example</groupId>
+            <artifactId>wieertertwne</artifactId>
+            <scope>system</scope>
+            <version>1.0</version>
+            <systemPath>${project.basedir}/Libs/ProtocolLib.jar</systemPath>
+        </dependency>
+
+        <!-- PlaceholderAPI (Maven) -->
+        <dependency>
+            <groupId>me.clip</groupId>
+            <artifactId>placeholderapi</artifactId>
+            <version>2.12.2</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Jackson -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.10.0</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- CombatTagPlus -->
+        <dependency>
+            <groupId>net.minelink</groupId>
+            <artifactId>CombatTagPlus</artifactId>
+            <version>1.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/Libs/CombatTagPlus.jar</systemPath>
+        </dependency>
+
+        <!-- EnchantmentAPI -->
+        <dependency>
+            <groupId>org.example</groupId>
+            <artifactId>wine</artifactId>
+            <scope>system</scope>
+            <version>1.0</version>
+            <systemPath>${project.basedir}/Libs/EnchantmentAPI-1.0-SNAPSHOT.jar</systemPath>
+        </dependency>
+
+        <!-- CurseCollectBin -->
+        <dependency>
+            <groupId>org.example</groupId>
+            <artifactId>ewrrwine</artifactId>
+            <scope>system</scope>
+            <version>1.0</version>
+            <systemPath>${project.basedir}/Libs/CurseCollectBin-1.0-SNAPSHOT.jar</systemPath>
+        </dependency>
+
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.28</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- DecentHolograms (Maven) -->
+        <dependency>
+            <groupId>com.github.decentsoftware-eu</groupId>
+            <artifactId>decentholograms</artifactId>
+            <version>2.8.6</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- WorldGuard -->
+        <dependency>
+            <groupId>com.filoghost</groupId>
+            <artifactId>WorldGuard</artifactId>
+            <version>1.8.8</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/Libs/worldguard-6.2 (1).jar</systemPath>
+        </dependency>
+
+        <!-- WorldEdit -->
+        <dependency>
+            <groupId>com.filoghost</groupId>
+            <artifactId>WorerewrldGuard</artifactId>
+            <version>1.8.8</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/Libs/worldedit-bukkit-6.1.9 (1).jar</systemPath>
+        </dependency>
+
+        <!-- Vault API -->
+        <dependency>
+            <groupId>com.github.MilkBowl</groupId>
+            <artifactId>VaultAPI</artifactId>
+            <version>1.7</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Factions (new replacement for SaberFactions) -->
+        <dependency>
+            <groupId>com.candyrealms.Factions</groupId>
+            <artifactId>Factions</artifactId>
+            <version>1.0.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/Libs/Factions.jar</systemPath>
+        </dependency>
+
+        <!-- CurseArmorSets -->
+        <dependency>
+            <groupId>com.github.SaberLLC</groupId>
+            <artifactId>Saber-Facerwerwertions</artifactId>
+            <version>4.1.4-STABLE</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/Libs/CurseArmorSets-1.0-SNAPSHOT.jar</systemPath>
+        </dependency>
+
+        <!-- EssentialsX -->
+        <dependency>
+            <groupId>com.github.SaberLLC</groupId>
+            <artifactId>Saber-Fewreracerwerwertions</artifactId>
+            <version>4.1.4-STABLE</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/Libs/EssentialsX-2.18.1..jar</systemPath>
+        </dependency>
+
+        <!-- CurseFeatures -->
+        <dependency>
+            <groupId>com.github.SaberLLC</groupId>
+            <artifactId>Saber-Fewreracewerrwerwertions</artifactId>
+            <version>4.1.4-STABLE</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/Libs/CurseFeatures-1.0-SNAPSHOT.jar</systemPath>
+        </dependency>
+
+        <!-- CurseLootManager -->
+        <dependency>
+            <groupId>org.cursepvp.lootmanager</groupId>
+            <artifactId>CurseLoottManager</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/Libs/CurseLootManager-1.0-SNAPSHOT.jar</systemPath>
+        </dependency>
+
+        <!-- BukkitAPI -->
+        <dependency>
+            <groupId>org.infuseewrerwdpvp.lootmanager</groupId>
+            <artifactId>CurseLoewrottManager</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/Libs/bukkitapi (4).jar</systemPath>
+        </dependency>
+
+        <!-- CursePets -->
+        <dependency>
+            <groupId>org.infuseewrerwdpvp.lootmanager</groupId>
+            <artifactId>CurseLoottManager</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/Libs/CursePets-1.0-SNAPSHOT.jar</systemPath>
+        </dependency>
+
+        <!-- CurseModules -->
+        <dependency>
+            <groupId>org.infuseewrerwdpvp.lootmanager</groupId>
+            <artifactId>CurseLootewrtManager</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/Libs/CurseModules-1.0-SNAPSHOT.jar</systemPath>
+        </dependency>
+
+        <!-- ShopGUIPlus -->
+        <dependency>
+            <groupId>org.infuseewrerwdpvp.lootmanager</groupId>
+            <artifactId>CurseLootewrwertManager</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/Libs/ShopGUIPlus-1.76.0.jar</systemPath>
+        </dependency>
+
+        <!-- CoreProtect -->
+        <dependency>
+            <groupId>org.infuseewrerwdpvp.lootmanager</groupId>
+            <artifactId>CurseLootewewrrwertManager</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/Libs/CoreProtect.jar</systemPath>
+        </dependency>
+
+        <!-- CurseCommons -->
+        <dependency>
+            <groupId>org.cursepvp.commons</groupId>
+            <artifactId>CurseCommons</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <systemPath>${project.basedir}/Libs/CurseCommons-1.0-SNAPSHOT.jar</systemPath>
+            <scope>system</scope>
+        </dependency>
+
+        <!-- NBTAPI (Maven) -->
+        <dependency>
+            <groupId>de.tr7zw</groupId>
+            <artifactId>item-nbt-api-plugin</artifactId>
+            <version>2.14.1</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+</project>

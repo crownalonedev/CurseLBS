@@ -1,0 +1,49 @@
+bonus-lore:
+  - ' '
+  - '&7&nRight-Click&r &7(in your hand) to receive'
+  - '&7all these items below that are in this bundle.'
+  - ' '
+monthly-bonus-lore:
+  - '&f" &oThis treasure crate contains a wealth of valuable items, '
+  - '&7&owaiting to be discovered. It is said that those who are brave enough'
+  - '&7&oto unlock its secrets will be rewarded with untold riches. &f"'
+  - ' '
+lootbag-announce:
+  - "&a&l(&f&l!&a&l) &f&l%player% &ahas just opened the %lootbag%&a and has received"
+
+# ─────────────────────────────────────────────────────────
+# Server Branding — change these when switching domains
+# ─────────────────────────────────────────────────────────
+store-url: "store.cursepvp.org"
+
+# Server name used in crate-opening broadcast prefix (e.g. "&5&lCurse &7┃ &6")
+server-name: "Curse"
+
+# Crate-opening broadcast format
+# Placeholders: %server-name%, %player%, %lootbag%
+crate-broadcast: "&5&l%server-name% &7┃ &6%player%&f is opening %lootbag%"
+
+# Bot name shown in Hype Box Battles (with color codes)
+bot-name: "&5&lCurse Bot"
+
+# Bot display name for plain-text descriptions (no color codes)
+bot-name-plain: "Curse Bot"
+
+# Showcase sale broadcast (sent periodically to all online players)
+# Placeholders: %lootbag% = showcased lootbag display name, %store-url% = store-url value
+sale-broadcast:
+  line1: "&7Unlock the %lootbag% &r &7here!"
+  line2: "&b&n%store-url%"
+
+# Crate animation hologram line
+# Placeholder: %store-url%
+crate-hologram-line: "&dUnlock at &d%store-url%"
+
+# Display menu "locked item" messages shown when a player clicks a locked showcase item
+# Placeholder: %store-url%
+display-menu:
+  locked-line1: "&c&l(!) &CThis item is locked!"
+  locked-line2: "&7Purchase this item at &n%store-url%&7!"
+
+# Hype wave ended broadcast message
+hype-wave-ended: "&cThe Hype Wave has ended!"

@@ -1,0 +1,5 @@
+name: CurseLootBags
+version: 1.0
+author: polororr
+depend: [CurseCommons, CurseLootManager, NBTAPI]
+main: org.minecurse.lootbags.LootBagPlugin
