@@ -82,6 +82,29 @@ public class LootBag {
    }
 
    @JsonIgnore
+   public void modernize() {
+      if (this.displayName != null) {
+         this.displayName = this.displayName.replace('\u00a7', '&');
+      }
+
+      if (this.lore != null) {
+         List<String> newLore = Lists.newArrayList();
+         for (String line : this.lore) {
+            newLore.add(line == null ? "" : line.replace('\u00a7', '&'));
+         }
+         this.lore = newLore;
+      }
+
+      if (this.material == null || this.material.isEmpty()) {
+         this.material = this.getItemStack().getType().name();
+      }
+
+      if (this.lore == null) {
+         this.lore = Lists.newArrayList();
+      }
+   }
+
+   @JsonIgnore
    public String getDisplayNameField() {
       return this.displayName;
    }

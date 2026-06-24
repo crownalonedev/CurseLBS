@@ -14,6 +14,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -94,7 +95,6 @@ public class LootBagCreationMenu implements Listener {
    }
 
    private void refreshMenu(Player player) {
-      LootBagManager.getInstance().saveToDisk();
       LootBagCreationMenu menu = new LootBagCreationMenu(this.lootBag);
       menu.show(player);
       this.sound(player);
@@ -104,6 +104,25 @@ public class LootBagCreationMenu implements Listener {
       this.refreshMenu(player);
       this.editType.remove(player.getUniqueId());
       player.sendMessage(LootBagPlugin.prefix("Your current lootbag action has been completed."));
+   }
+
+   @EventHandler
+   public void onClose(InventoryCloseEvent event) {
+      if (!(event.getPlayer() instanceof Player)) {
+         return;
+      }
+
+      Player player = (Player)event.getPlayer();
+      String title = event.getView().getTitle();
+      if (title == null || !title.startsWith("Editing: ")) {
+         return;
+      }
+
+      if (this.editType.containsKey(player.getUniqueId())) {
+         return;
+      }
+
+      LootBagManager.getInstance().saveToDisk();
    }
 
    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
@@ -256,7 +275,6 @@ public class LootBagCreationMenu implements Listener {
 
                   currentLore.add(event.getMessage());
                   this.lootBag.setLore(currentLore);
-                  LootBagManager.getInstance().saveToDisk();
                   player.sendMessage(LootBagPlugin.prefix("Added lore line: &f" + event.getMessage()));
                   player.sendMessage(LootBagPlugin.prefix("&7Type another line to add more, 'clear' to wipe, or 'cancel' to finish."));
                   break;

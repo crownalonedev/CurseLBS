@@ -49,7 +49,7 @@ public class LootBagCommand extends BaseCommand {
             sender.sendMessage(LootBagPlugin.prefix("&cUsage: /el delete <lootBag>"));
             sender.sendMessage(LootBagPlugin.prefix("&cUsage: /el list"));
             sender.sendMessage(LootBagPlugin.prefix("&cUsage: /el gui"));
-            sender.sendMessage(LootBagPlugin.prefix("&cUsage: /el save"));
+            sender.sendMessage(LootBagPlugin.prefix("&cUsage: /el update"));
             sender.sendMessage(LootBagPlugin.prefix("&cUsage: /el reload"));
          } else {
             LootBagDisplayMenu.getInventory().open((Player)sender);
@@ -149,10 +149,16 @@ public class LootBagCommand extends BaseCommand {
    }
 
    @CommandPermission("curse.admin")
-   @Subcommand("save")
-   public void onSave(CommandSender sender) {
-      LootBagManager.getInstance().saveToDisk();
-      sender.sendMessage(LootBagPlugin.prefix("All lootbags have been saved to disk."));
+   @Subcommand("update")
+   public void onUpdate(CommandSender sender) {
+      LootBagManager manager = LootBagManager.getInstance();
+      int updated = 0;
+      for (LootBag bag : manager.getLootBags()) {
+         bag.modernize();
+         updated++;
+      }
+      manager.saveToDisk();
+      sender.sendMessage(LootBagPlugin.prefix("Updated {0} lootbags to the latest config format.", String.valueOf(updated)));
    }
 
    @CommandPermission("curse.admin")

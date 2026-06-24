@@ -120,6 +120,7 @@ public class LootBagManager {
                try {
                   LootBag loaded = mapper.readValue(f, LootBag.class);
                   if (loaded != null) {
+                     loaded.modernize();
                      this.LootBags.add(loaded);
                   }
                } catch (Exception var9) {
@@ -154,12 +155,9 @@ public class LootBagManager {
             File jsonFile = new File(this.path + "/lootbags/" + LootBag2.getInternalName() + ".json");
 
             try {
-               if (jsonFile.exists()) {
-                  jsonFile.delete();
-               }
-
-               jsonFile.createNewFile();
-               mapper.writeValue(jsonFile, LootBag2);
+               java.io.FileOutputStream fos = new java.io.FileOutputStream(jsonFile);
+               mapper.writeValue(fos, LootBag2);
+               fos.close();
             } catch (Exception var6) {
                this.plugin.getLogger().warning("Failed to save lootbag " + LootBag2.getInternalName() + ": " + var6.toString());
             }
