@@ -219,6 +219,10 @@ public class LootBag {
       item.setType(Material.SKULL_ITEM);
       item.setDurability((short) 3);
 
+      ItemMeta existingMeta = item.getItemMeta();
+      String existingName = (existingMeta != null && existingMeta.hasDisplayName()) ? existingMeta.getDisplayName() : null;
+      List<String> existingLore = (existingMeta != null && existingMeta.hasLore()) ? existingMeta.getLore() : null;
+
       try {
          NBTItem nbt = new NBTItem(item);
          NBTCompound skullOwner = nbt.addCompound("SkullOwner");
@@ -228,7 +232,22 @@ public class LootBag {
          NBTCompoundList texturesList = properties.getCompoundList("textures");
          NBTListCompound textureEntry = texturesList.addCompound();
          textureEntry.setString("Value", this.texture);
-         nbt.applyNBT(item);
+         ItemStack result = nbt.getItem();
+
+         item.setType(result.getType());
+         item.setDurability(result.getDurability());
+         item.setItemMeta(result.getItemMeta());
+
+         ItemMeta newMeta = item.getItemMeta();
+         if (newMeta != null) {
+            if (existingName != null) {
+               newMeta.setDisplayName(existingName);
+            }
+            if (existingLore != null) {
+               newMeta.setLore(existingLore);
+            }
+            item.setItemMeta(newMeta);
+         }
       } catch (Exception ignored) {
       }
    }

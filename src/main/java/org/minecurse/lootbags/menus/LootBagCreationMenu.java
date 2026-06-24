@@ -34,6 +34,7 @@ import org.minecurse.lootmanager.LootManagerPlugin;
 import org.minecurse.lootmanager.utils.RetroUtils;
 
 public class LootBagCreationMenu implements Listener {
+   private static long lastSaveTime = 0L;
    private final LootBag lootBag;
    private final ChestMenu menu;
    private final HashMap<UUID, EditType> editType = new HashMap<>();
@@ -121,6 +122,12 @@ public class LootBagCreationMenu implements Listener {
       if (this.editType.containsKey(player.getUniqueId())) {
          return;
       }
+
+      long now = System.currentTimeMillis();
+      if (now - lastSaveTime < 2000L) {
+         return;
+      }
+      lastSaveTime = now;
 
       LootBagManager.getInstance().saveToDisk();
    }
