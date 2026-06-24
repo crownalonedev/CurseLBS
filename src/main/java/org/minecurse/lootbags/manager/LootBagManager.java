@@ -170,11 +170,30 @@ public class LootBagManager {
                new File(this.path + "/lootbags/" + LootBag2.getInternalName() + ".json").delete();
             } else {
                File jsonFile = new File(this.path + "/lootbags/" + LootBag2.getInternalName() + ".json");
+               File tmpFile = new File(this.path + "/lootbags/" + LootBag2.getInternalName() + ".json.tmp");
 
                try {
-                  mapper.writeValue(jsonFile, LootBag2);
-               } catch (Exception var8) {
-                  this.plugin.getLogger().warning("Failed to save lootbag " + LootBag2.getInternalName() + ": " + var8.toString());
+                  mapper.writeValue(tmpFile, LootBag2);
+                  try {
+                     java.nio.file.Files.move(
+                        tmpFile.toPath(),
+                        jsonFile.toPath(),
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                        java.nio.file.StandardCopyOption.ATOMIC_MOVE
+                     );
+                  } catch (Exception var9) {
+                     try {
+                        jsonFile.delete();
+                     } catch (Exception ignored) {
+                     }
+
+                     tmpFile.renameTo(jsonFile);
+                  }
+               } catch (Exception var10) {
+                  this.plugin.getLogger().warning("Failed to save lootbag " + LootBag2.getInternalName() + ": " + var10.toString());
+                  if (tmpFile.exists()) {
+                     tmpFile.delete();
+                  }
                }
             }
          }
